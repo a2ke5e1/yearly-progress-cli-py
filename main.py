@@ -1,6 +1,18 @@
 from time import sleep
 from datetime import datetime
 
+class FontStyle:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
 def ordinal(n):
     if 10 <= n % 100 <= 20:
         suffix = 'th'
@@ -38,7 +50,21 @@ def get_end_time(type):
         return datetime(datetime.now().year, datetime.now().month, 30, 23, 59, 59, 999999)
     elif type == 'day':
         return datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59, 59, 999999)
-    
+
+def get_total_type_seconds(type):
+    start_time = get_start_time(type)
+    end_time = get_end_time(type)
+    total_seconds =  (end_time - start_time).total_seconds()
+
+    return int(round(total_seconds, 0))
+
+def print_title(title, value):
+    print(f"{FontStyle.BOLD}{title}: {FontStyle.END}{value}")
+
+def progress_bar(progress, size=50):
+    print(f"{FontStyle.BLUE}[{'|' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
+
+
 
 
 
@@ -46,37 +72,48 @@ year = datetime.now().year
 month = month_name(datetime.now().month)
 day = ordinal(datetime.now().day)
 
+line_count = 0
+
+def print(*args, **kwargs):
+    global line_count
+    line_count += 1
+    for arg in args:
+        line_count += str(arg).count("\n")
+    # __builtins__.print(f"{line_count=}")
+    __builtins__.print(*args, **kwargs)
 
 
-
-import os
-# os.system("cls")
-
-
-print("Yearly Progress v0.1")
+print(f"\nYearly Progress {FontStyle.BLUE}v0.2{FontStyle.END}")
 print("--------------------")
 try:
     while True:
+
+        line_count = 0
     
-        year_progress = progress('year') * 100
-        month_progress = progress('month') * 100
-        day_progress = progress('day') * 100
+        year_progress = progress('year')
+        month_progress = progress('month') 
+        day_progress = progress('day') 
 
-        yi = int(year_progress) // 10
-        mi = int(month_progress) // 10
-        di = int(day_progress) // 10
+   
+
+        print_title("\nYear", year)
+        progress_bar(year_progress)
+        print(f"of {get_total_type_seconds('year')}s")
 
 
+        print_title("\nMonth", month)
+        progress_bar(month_progress)
+        print(f"of {get_total_type_seconds('month')}s")
 
-        print(f"\nYear: {year}")
-        print("[","=" * yi," " * (10 - yi), "]"," {:.8f}%".format(year_progress), sep="")
-        print(f"\nMonth: {month}")
-        print("[","=" * mi," " * (10 - mi), "]"," {:.8f}%".format(month_progress), sep="")
-        print(f"\nDay: {day}")
-        print("[","=" * di," " * (10 - di), "]"," {:.8f}%".format(day_progress), sep="")
 
-        print("\033[A" * 10)
+        print_title("\nDay", day)
+        progress_bar(day_progress)
+        print(f"of {get_total_type_seconds('day')}s")
+
+
+        print("\033[A" * (line_count + 1)) # plus one for the clear command itself. 
         sleep(0.1)
 
 except KeyboardInterrupt:
-    print("\n"* 10)
+    print("\n"* (line_count))
+
