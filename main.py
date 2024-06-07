@@ -67,7 +67,7 @@ def progress_bar(progress, size=50):
     if window_col < size:
         size = window_col - 30
 
-    print(f"{FontStyle.BLUE}[{'|' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
+    print(f"{FontStyle.BLUE}[{'█' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
 
 
 def get_window_size():
@@ -95,7 +95,7 @@ try:
     while True:
         line_count = 0
 
-        print(f"\nYearly Progress {FontStyle.BLUE}v0.2{FontStyle.END}")
+        print(f"\nYearly Progress {FontStyle.BLUE}v0.3{FontStyle.END}")
         print("--------------------")
 
     
