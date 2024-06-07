@@ -62,10 +62,18 @@ def print_title(title, value):
     print(f"{FontStyle.BOLD}{title}: {FontStyle.END}{value}")
 
 def progress_bar(progress, size=50):
+    window_col, _ = get_window_size()
+
+    if window_col < size:
+        size = window_col - 30
+
     print(f"{FontStyle.BLUE}[{'|' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
 
 
-
+def get_window_size():
+    import os
+    col, row = os.get_terminal_size()
+    return col, row
 
 
 year = datetime.now().year
@@ -83,12 +91,13 @@ def print(*args, **kwargs):
     __builtins__.print(*args, **kwargs)
 
 
-print(f"\nYearly Progress {FontStyle.BLUE}v0.2{FontStyle.END}")
-print("--------------------")
 try:
     while True:
-
         line_count = 0
+
+        print(f"\nYearly Progress {FontStyle.BLUE}v0.2{FontStyle.END}")
+        print("--------------------")
+
     
         year_progress = progress('year')
         month_progress = progress('month') 
@@ -112,6 +121,7 @@ try:
 
 
         print("\033[A" * (line_count + 1)) # plus one for the clear command itself. 
+        # get_window_size()
         sleep(0.1)
 
 except KeyboardInterrupt:
