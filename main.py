@@ -28,31 +28,36 @@ def month_name(n):
     return ['January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December'][n - 1]
 
-def progress(type):
+def progress(type, start_time=None, end_time=None):
 
-    start_time = get_start_time(type)
-    end_time = get_end_time(type)
+    start_time = get_start_time(type, start_time)
+    end_time = get_end_time(type, end_time)
 
     total = end_time - start_time
     current = datetime.now() - start_time
     return current / total
 
-def get_start_time(type):
+def get_start_time(type, start_time=None):
     if type == 'year':
         return datetime(datetime.now().year, 1, 1, 0, 0, 0, 0)
     elif type == 'month':
         return datetime(datetime.now().year, datetime.now().month, 1, 0, 0, 0, 0)
     elif type == 'day':
         return datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0, 0, 0)
+    elif type == 'custom' and start_time is not None:
+        return start_time
 
 
-def get_end_time(type):
+def get_end_time(type, end_time=None):
     if type == 'year':
         return datetime(datetime.now().year, 12, 31, 23, 59, 59, 999999)
     elif type == 'month':
         return datetime(datetime.now().year, datetime.now().month, 30, 23, 59, 59, 999999)
     elif type == 'day':
         return datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59, 59, 999999)
+    
+    elif type == 'custom' and end_time is not None:
+        return end_time
 
 def get_total_type_seconds(type):
     start_time = get_start_time(type)
@@ -94,6 +99,45 @@ def print(*args, **kwargs):
     __builtins__.print(*args, **kwargs)
 
 
+def load_events():
+    import json
+    try:
+        events = []
+        with open("events.json", "r") as f:
+            events = json.load(f)
+
+        for event in events:
+            if "start_time" in event:
+                event["start_time"] = datetime.strptime(event["start_time"], "%Y-%m-%d %H:%M:%S")
+            if "end_time" in event:
+                event["end_time"] = datetime.strptime(event["end_time"], "%Y-%m-%d %H:%M:%S")
+
+        return events
+    except FileNotFoundError:
+        return []
+    
+def save_events(events):
+    import json
+    with open("events.json", "w") as f:
+        json.dump(events, f, indent=4, default=str)
+
+
+def create_event():
+    try:
+        events = load_events()
+        event = {}
+        __builtins__.print("Create an event: ")
+        event["title"] = input("title: ")
+        event["description"] = input("description: ")
+        event["start_time"] = datetime.strptime(input("Start time (YYYY-MM-DD HH:MM:SS): "), "%Y-%m-%d %H:%M:%S")
+        event["end_time"] = datetime.strptime(input("End time (YYYY-MM-DD HH:MM): "), "%Y-%m-%d %H:%M:%S")
+        events.append(event)
+        save_events(events)
+    except ValueError:
+        __builtins__.print("Invalid date format")
+        sys.exit(1)
+
+
 def main(): 
     global line_count
     keep_looping = True
@@ -101,6 +145,7 @@ def main():
     show_day = False
     show_month = False
     show_year = False
+    show_events = False
 
     args = sys.argv[1:]
     if args:
@@ -111,6 +156,8 @@ def main():
             __builtins__.print("-m --month: Show only the progress of the month")
             __builtins__.print("-y --year: Show only the progress of the year")
             __builtins__.print("-s : Don't keep updating the progress bar")
+            __builtins__.print("-ce --create-event: Create an event")
+            __builtins__.print("-l --list: List all events")
             sys.exit(0)
 
         if "-s" in args:
@@ -129,6 +176,13 @@ def main():
 
         if "-y" in args or "--year" in args:
             show_year = True
+
+        if "-ce" in args or "--create-event" in args:
+            create_event()
+            sys.exit(0)
+
+        if "-l" in args or "--list" in args:
+            show_events = True
     else:
         show_day = True
         show_month = True
@@ -165,6 +219,15 @@ def main():
                 progress_bar(day_progress)
                 print(f"of {get_total_type_seconds('day')}s")
 
+            if show_events:
+                events = load_events()
+                for event in events:
+                    print_title("\nEvent", event["title"])
+                    print_title("Description", event["description"])
+                    progress_bar(progress('custom', event["start_time"], event["end_time"]))
+                    print(f"from {event['start_time']} to {event['end_time']}")
+
+
             print("\033[A" * (line_count + 1)) # plus one for the clear command itself. 
             # get_window_size()
             sleep(0.1)
@@ -174,9 +237,7 @@ def main():
 
     except KeyboardInterrupt:
         print("\n"* (line_count))
-    
-    
-    sys.exit(0)
+        sys.exit(0)
 
 
 
