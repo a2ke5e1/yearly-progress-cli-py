@@ -2,7 +2,7 @@ from time import sleep
 from datetime import datetime
 import sys
 
-VERSION = "v0.4"
+VERSION = "v0.5"
 
 class FontStyle:
    PURPLE = '\033[95m'
@@ -74,6 +74,9 @@ def progress_bar(progress, size=50):
 
     if window_col < size:
         size = window_col - 30
+
+    if progress > 1:
+        progress = 1
 
     print(f"{FontStyle.BLUE}[{'█' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
 
