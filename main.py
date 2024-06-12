@@ -1,89 +1,13 @@
-from time import sleep
 from datetime import datetime
+from time import sleep
 import sys
-
-VERSION = "v0.4"
-
-class FontStyle:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
-
-def ordinal(n):
-    if 10 <= n % 100 <= 20:
-        suffix = 'th'
-    else:
-        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
-    return str(n) + suffix
+from font_style import FontStyle
+from yp_manager import month_name, ordinal, progress, get_total_type_seconds, create_event, load_events, get_window_size
 
 
-def month_name(n):
-    return ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-            'August', 'September', 'October', 'November', 'December'][n - 1]
-
-def progress(type):
-
-    start_time = get_start_time(type)
-    end_time = get_end_time(type)
-
-    total = end_time - start_time
-    current = datetime.now() - start_time
-    return current / total
-
-def get_start_time(type):
-    if type == 'year':
-        return datetime(datetime.now().year, 1, 1, 0, 0, 0, 0)
-    elif type == 'month':
-        return datetime(datetime.now().year, datetime.now().month, 1, 0, 0, 0, 0)
-    elif type == 'day':
-        return datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0, 0, 0)
+VERSION = "v0.6"
 
 
-def get_end_time(type):
-    if type == 'year':
-        return datetime(datetime.now().year, 12, 31, 23, 59, 59, 999999)
-    elif type == 'month':
-        return datetime(datetime.now().year, datetime.now().month, 30, 23, 59, 59, 999999)
-    elif type == 'day':
-        return datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59, 59, 999999)
-
-def get_total_type_seconds(type):
-    start_time = get_start_time(type)
-    end_time = get_end_time(type)
-    total_seconds =  (end_time - start_time).total_seconds()
-
-    return int(round(total_seconds, 0))
-
-def print_title(title, value):
-    print(f"{FontStyle.BOLD}{title}: {FontStyle.END}{value}")
-
-def progress_bar(progress, size=50):
-    window_col, _ = get_window_size()
-
-    if window_col < size:
-        size = window_col - 30
-
-    print(f"{FontStyle.BLUE}[{'█' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
-
-
-def get_window_size():
-    import os
-    col, row = os.get_terminal_size()
-    return col, row
-
-
-year = datetime.now().year
-month = month_name(datetime.now().month)
-day = ordinal(datetime.now().day)
-
-line_count = 0
 
 def print(*args, **kwargs):
     global line_count
@@ -94,6 +18,29 @@ def print(*args, **kwargs):
     __builtins__.print(*args, **kwargs)
 
 
+def print_title(title, value):
+    print(f"{FontStyle.BOLD}{title}: {FontStyle.END}{value}")
+
+def progress_bar(progress, size=50):
+    window_col, _ = get_window_size()
+
+    if window_col < size:
+        size = window_col - 30
+
+    if progress > 1:
+        progress = 1
+
+    print(f"{FontStyle.BLUE}[{'█' * int(progress * size)}{' ' * int(size - progress * size)}]{FontStyle.END}", f" {(progress*100):.8f}%", sep="")
+
+
+year = datetime.now().year
+month = month_name(datetime.now().month)
+day = ordinal(datetime.now().day)
+
+line_count = 0
+
+
+
 def main(): 
     global line_count
     keep_looping = True
@@ -101,6 +48,7 @@ def main():
     show_day = False
     show_month = False
     show_year = False
+    show_events = False
 
     args = sys.argv[1:]
     if args:
@@ -111,6 +59,8 @@ def main():
             __builtins__.print("-m --month: Show only the progress of the month")
             __builtins__.print("-y --year: Show only the progress of the year")
             __builtins__.print("-s : Don't keep updating the progress bar")
+            __builtins__.print("-ce --create-event: Create an event")
+            __builtins__.print("-l --list: List all events")
             sys.exit(0)
 
         if "-s" in args:
@@ -129,6 +79,13 @@ def main():
 
         if "-y" in args or "--year" in args:
             show_year = True
+
+        if "-ce" in args or "--create-event" in args:
+            create_event()
+            sys.exit(0)
+
+        if "-l" in args or "--list" in args:
+            show_events = True
     else:
         show_day = True
         show_month = True
@@ -165,6 +122,15 @@ def main():
                 progress_bar(day_progress)
                 print(f"of {get_total_type_seconds('day')}s")
 
+            if show_events:
+                events = load_events()
+                for event in events:
+                    print_title("\nEvent", event["title"])
+                    print_title("Description", event["description"])
+                    progress_bar(progress('custom', event["start_time"], event["end_time"]))
+                    print(f"from {event['start_time']} to {event['end_time']}")
+
+
             print("\033[A" * (line_count + 1)) # plus one for the clear command itself. 
             # get_window_size()
             sleep(0.1)
@@ -174,9 +140,7 @@ def main():
 
     except KeyboardInterrupt:
         print("\n"* (line_count))
-    
-    
-    sys.exit(0)
+        sys.exit(0)
 
 
 
