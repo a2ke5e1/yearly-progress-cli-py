@@ -6,7 +6,7 @@ This is a yearly progress building in python for terminals.
 ## Installing 
 
 1. Windows: 
-Add `yp.bat` to enviornment vriable. 
+Add `yp.bat` to enviornment variable. 
 Make sure to change path in the batch file to main.py where you have downloaded your file.
 
 ```bat
